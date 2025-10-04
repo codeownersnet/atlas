@@ -45,7 +45,7 @@ go install github.com/codeownersnet/atlas/cmd/atlas-mcp@latest
 #### Option D: Build from Source
 ```bash
 git clone https://github.com/codeownersnet/atlas
-cd go-mcp-atlassian
+cd atlas
 go build -o atlas-mcp ./cmd/atlas-mcp
 ```
 

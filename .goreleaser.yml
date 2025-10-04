@@ -33,11 +33,7 @@ builds:
 
 archives:
   - id: atlas-mcp
-    format: tar.gz
-    # Use zip for Windows archives
-    format_overrides:
-      - goos: windows
-        format: zip
+    rlcp: true
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
@@ -55,7 +51,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -92,7 +88,7 @@ release:
   footer: |
     **Full Changelog**: https://github.com/codeownersnet/atlas/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-brews:
+homebrew:
   - repository:
       owner: codeownersnet
       name: homebrew-atlas

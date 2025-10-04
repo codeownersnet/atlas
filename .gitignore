@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-atlas-mcp
+
 mcp-atlassian
 
 # Test binary, built with `go test -c`
