@@ -33,7 +33,6 @@ builds:
 
 archives:
   - id: atlas-mcp
-    rlcp: true
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
@@ -88,7 +87,7 @@ release:
   footer: |
     **Full Changelog**: https://github.com/codeownersnet/atlas/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-homebrew:
+brews:
   - repository:
       owner: codeownersnet
       name: homebrew-atlas
