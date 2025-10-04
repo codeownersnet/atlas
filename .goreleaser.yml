@@ -1,0 +1,124 @@
+# GoReleaser configuration for atlas-mcp
+# Documentation: https://goreleaser.com
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: atlas-mcp
+    main: ./cmd/atlas-mcp
+    binary: atlas-mcp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # Ignore Windows ARM64 as it's not commonly used
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: atlas-mcp
+    format: tar.gz
+    # Use zip for Windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+      - .env.example
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+      - '^build:'
+      - 'typo'
+      - 'README'
+
+release:
+  github:
+    owner: codeownersnet
+    name: atlas
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
+  header: |
+    ## Atlas MCP v{{ .Version }}
+
+    ### Installation
+
+    #### Homebrew (macOS)
+    ```bash
+    brew tap codeownersnet/atlas
+    brew install atlas-mcp
+    ```
+
+    #### Manual Installation
+    Download the appropriate archive for your platform from the assets below.
+  footer: |
+    **Full Changelog**: https://github.com/codeownersnet/atlas/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+brews:
+  - repository:
+      owner: codeownersnet
+      name: homebrew-atlas
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/codeownersnet/atlas
+    description: "Model Context Protocol (MCP) server for Atlassian products (Jira, Confluence and Opsgenie)."
+    license: MIT
+    commit_author:
+      name: goreleaserbot
+      email: info@codeowners.net
+    install: |
+      bin.install "atlas-mcp"
+    test: |
+      system "#{bin}/atlas-mcp", "--version"
+
+# Docker images (optional - for future use)
+# dockers:
+#   - image_templates:
+#       - "ghcr.io/codeownersnet/atlas:{{ .Version }}"
+#       - "ghcr.io/codeownersnet/atlas:latest"
+#     dockerfile: Dockerfile
+#     build_flag_templates:
+#       - "--pull"
+#       - "--label=org.opencontainers.image.created={{.Date}}"
+#       - "--label=org.opencontainers.image.title={{.ProjectName}}"
+#       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+#       - "--label=org.opencontainers.image.version={{.Version}}"
