@@ -94,10 +94,10 @@ brews:
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: https://github.com/codeownersnet/atlas
-    description: "Model Context Protocol (MCP) server for Atlassian products (Jira, Confluence and Opsgenie)."
+    description: "Model Context Protocol (MCP) server for Atlassian products (Jira, Confluence & Opsgenie)."
     license: MIT
     commit_author:
-      name: goreleaserbot
+      name: CodeOwners.Net
       email: info@codeowners.net
     install: |
       bin.install "atlas-mcp"

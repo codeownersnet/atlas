@@ -1,13 +1,13 @@
 # Go MCP Atlassian
 
-A high-performance Go implementation of the Model Context Protocol (MCP) server for Atlassian products (Jira and Confluence). This server enables AI assistants like Claude to seamlessly interact with your Atlassian instances.
+A high-performance Go implementation of the Model Context Protocol (MCP) server for Atlassian products (Jira, Confluence, and Opsgenie). This server enables AI assistants like Claude to seamlessly interact with your Atlassian instances.
 
-[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Features
 
-- **40 Tools Total**: 29 Jira tools + 11 Confluence tools
+- **65 Tools Total**: 29 Jira tools + 11 Confluence tools + 25 Opsgenie tools
 - **Multi-Platform Support**: Cloud and Server/Data Center deployments
 - **Multiple Auth Methods**: API Token, Personal Access Token, Bearer Token (BYO OAuth)
 - **Production Ready**: Built-in retry logic, proxy support, SSL verification
@@ -23,6 +23,7 @@ A high-performance Go implementation of the Model Context Protocol (MCP) server 
 | **Jira** | Server/Data Center (8.14+) | ✅ Supported |
 | **Confluence** | Cloud | ✅ Supported |
 | **Confluence** | Server/Data Center (6.0+) | ✅ Supported |
+| **Opsgenie** | Cloud | ✅ Supported |
 
 ## Quick Start
 
@@ -63,6 +64,9 @@ JIRA_API_TOKEN=your_jira_api_token
 CONFLUENCE_URL=https://your-domain.atlassian.net/wiki
 CONFLUENCE_USERNAME=your.email@example.com
 CONFLUENCE_API_TOKEN=your_confluence_api_token
+
+# For Opsgenie
+OPSGENIE_API_KEY=your_opsgenie_api_key
 ```
 
 <details>
@@ -78,24 +82,33 @@ JIRA_SSL_VERIFY=true
 CONFLUENCE_URL=https://confluence.your-company.com
 CONFLUENCE_PERSONAL_TOKEN=your_personal_access_token
 CONFLUENCE_SSL_VERIFY=true
+
+# For Opsgenie (Cloud only)
+OPSGENIE_API_KEY=your_opsgenie_api_key
 ```
 </details>
 
 ### 3. Authentication
 
-#### Option A: API Tokens (Cloud)
+#### Option A: API Tokens (Cloud - Jira/Confluence)
 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
 2. Click "Create API token"
 3. Copy the token immediately
 4. Set in `.env` file
 
-#### Option B: Personal Access Token (Server/Data Center)
+#### Option B: API Key (Opsgenie)
+1. Go to Opsgenie → Settings → API Key Management
+2. Create a new API key
+3. Copy the key immediately
+4. Set in `.env` file
+
+#### Option C: Personal Access Token (Server/Data Center)
 1. Go to your profile → Personal Access Tokens
 2. Create a new token
 3. Copy the token immediately
 4. Set in `.env` file
 
-#### Option C: Bearer Token (BYO OAuth - Advanced)
+#### Option D: Bearer Token (BYO OAuth - Advanced)
 If you manage OAuth tokens externally:
 
 ```bash
@@ -109,7 +122,7 @@ ATLASSIAN_OAUTH_CLOUD_ID=your_cloud_id
 ### 4. Run the Server
 
 ```bash
-./mcp-atlassian
+./atlas-mcp
 ```
 
 ### 5. IDE Integration
@@ -121,8 +134,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian": {
-      "command": "/path/to/mcp-atlassian",
+    "atlas": {
+      "command": "/path/to/atlas-mcp",
       "args": [],
       "env": {
         "JIRA_URL": "https://your-domain.atlassian.net",
@@ -130,7 +143,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
         "JIRA_API_TOKEN": "your_api_token",
         "CONFLUENCE_URL": "https://your-domain.atlassian.net/wiki",
         "CONFLUENCE_USERNAME": "your.email@example.com",
-        "CONFLUENCE_API_TOKEN": "your_api_token"
+        "CONFLUENCE_API_TOKEN": "your_api_token",
+        "OPSGENIE_API_KEY": "your_opsgenie_api_key"
       }
     }
   }
@@ -195,6 +209,37 @@ Open Settings → MCP → Add new global MCP server and configure similarly.
 - `confluence_add_label` - Add labels to pages
 - `confluence_add_comment` - Add comments to pages
 
+### Opsgenie Tools (25 total)
+
+#### Read Operations (13 tools)
+- `opsgenie_get_alert` - Get alert details
+- `opsgenie_list_alerts` - List alerts with filtering
+- `opsgenie_count_alerts` - Count alerts matching query
+- `opsgenie_get_request_status` - Get async request status
+- `opsgenie_get_incident` - Get incident details
+- `opsgenie_list_incidents` - List incidents with filtering
+- `opsgenie_get_schedule` - Get schedule details
+- `opsgenie_list_schedules` - List all schedules
+- `opsgenie_get_schedule_timeline` - Get schedule timeline
+- `opsgenie_get_on_calls` - Get current on-call information
+- `opsgenie_get_team` - Get team details
+- `opsgenie_list_teams` - List all teams
+- `opsgenie_get_user` - Get user information
+
+#### Write Operations (12 tools)
+- `opsgenie_create_alert` - Create new alerts
+- `opsgenie_close_alert` - Close alerts
+- `opsgenie_acknowledge_alert` - Acknowledge alerts
+- `opsgenie_snooze_alert` - Snooze alerts
+- `opsgenie_escalate_alert` - Escalate alerts
+- `opsgenie_assign_alert` - Assign alerts to users/teams
+- `opsgenie_add_note_to_alert` - Add notes to alerts
+- `opsgenie_add_tags_to_alert` - Add tags to alerts
+- `opsgenie_create_incident` - Create new incidents
+- `opsgenie_close_incident` - Close incidents
+- `opsgenie_add_note_to_incident` - Add notes to incidents
+- `opsgenie_add_responder_to_incident` - Add responders to incidents
+
 ## Configuration Options
 
 ### Security & Access Control
@@ -204,11 +249,14 @@ Open Settings → MCP → Add new global MCP server and configure similarly.
 READ_ONLY_MODE=true
 
 # Only enable specific tools (comma-separated)
-ENABLED_TOOLS=jira_get_issue,jira_search,confluence_search
+ENABLED_TOOLS=jira_get_issue,jira_search,confluence_search,opsgenie_list_alerts
 
 # Filter to specific projects/spaces
 JIRA_PROJECTS_FILTER=PROJ1,PROJ2
 CONFLUENCE_SPACES_FILTER=SPACE1,SPACE2
+
+# Disable specific services
+OPSGENIE_ENABLED=false
 ```
 
 ### Logging
@@ -235,6 +283,7 @@ NO_PROXY=localhost,127.0.0.1
 # Service-specific proxy (overrides global)
 JIRA_HTTP_PROXY=http://jira-proxy.example.com:8080
 CONFLUENCE_HTTPS_PROXY=http://confluence-proxy.example.com:8080
+OPSGENIE_HTTP_PROXY=http://opsgenie-proxy.example.com:8080
 ```
 
 ### Custom Headers
@@ -243,6 +292,7 @@ CONFLUENCE_HTTPS_PROXY=http://confluence-proxy.example.com:8080
 # Add custom headers to API requests
 JIRA_CUSTOM_HEADERS=X-Custom-Header=value1,X-Another=value2
 CONFLUENCE_CUSTOM_HEADERS=X-Custom-Header=value1
+OPSGENIE_CUSTOM_HEADERS=X-Custom-Header=value1
 ```
 
 ## Use Cases
@@ -271,11 +321,17 @@ User: "Create a tech design doc for the new feature"
 AI: [Creates structured Confluence page with proper formatting]
 ```
 
+### Incident Management
+```
+User: "Show me all critical alerts in Opsgenie and create an incident"
+AI: [Lists critical alerts and creates incident with proper responders]
+```
+
 ## Development
 
 ### Prerequisites
-- Go 1.21 or higher
-- Access to Jira and/or Confluence instance
+- Go 1.25 or higher
+- Access to Jira, Confluence, and/or Opsgenie instance
 - API tokens or Personal Access Tokens
 
 ### Using Make
@@ -344,7 +400,7 @@ make tools
 ### Project Structure
 
 ```
-go-mcp-atlassian/
+atlas/
 ├── cmd/atlas-mcp/           # Main application entry point
 ├── internal/
 │   ├── auth/                # Authentication providers
@@ -353,10 +409,12 @@ go-mcp-atlassian/
 │   ├── mcp/                 # MCP protocol implementation
 │   └── tools/               # Tool implementations
 │       ├── jira/            # Jira tools
-│       └── confluence/      # Confluence tools
+│       ├── confluence/      # Confluence tools
+│       └── opsgenie/        # Opsgenie tools
 ├── pkg/atlassian/           # Atlassian API clients
 │   ├── jira/                # Jira API client
-│   └── confluence/          # Confluence API client
+│   ├── confluence/          # Confluence API client
+│   └── opsgenie/            # Opsgenie API client
 └── docs/                    # Documentation
 ```
 
@@ -393,9 +451,10 @@ HTTPS_PROXY=http://proxy:8080
 ### Tool Not Available
 
 If a tool isn't showing up:
-1. Check service is configured (Jira or Confluence)
-2. Verify `ENABLED_TOOLS` isn't filtering it out
-3. Check if `READ_ONLY_MODE` is blocking write tools
+1. Check service is configured (Jira, Confluence, or Opsgenie)
+2. Verify service is enabled (e.g., `OPSGENIE_ENABLED=true`)
+3. Verify `ENABLED_TOOLS` isn't filtering it out
+4. Check if `READ_ONLY_MODE` is blocking write tools
 
 ## Security
 
