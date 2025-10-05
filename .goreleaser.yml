@@ -87,7 +87,8 @@ release:
     **Full Changelog**: https://github.com/codeownersnet/atlas/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 brews:
-  - repository:
+  - name: atlas-mcp
+    repository:
       owner: codeownersnet
       name: homebrew-atlas
       branch: main
