@@ -56,7 +56,7 @@ func main() {
 
 func runServer(configFile string) error {
 	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := config.Load(configFile)
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
@@ -166,17 +166,13 @@ func runServer(configFile string) error {
 		cancel()
 	}()
 
-	// Start the appropriate transport
-	switch cfg.Server.Transport {
-	case "stdio":
-		return runStdioTransport(ctx, mcpServer, &logger)
-	case "sse":
-		return fmt.Errorf("SSE transport not yet implemented")
-	case "streamable-http":
-		return fmt.Errorf("streamable-http transport not yet implemented")
-	default:
-		return fmt.Errorf("unknown transport: %s", cfg.Server.Transport)
+	// Start stdio transport (only supported transport)
+	if cfg.Server.Transport != "stdio" {
+		logger.Warn().
+			Str("requested", cfg.Server.Transport).
+			Msg("only stdio transport is supported, using stdio")
 	}
+	return runStdioTransport(ctx, mcpServer, &logger)
 }
 
 func runStdioTransport(ctx context.Context, server *mcp.Server, logger *zerolog.Logger) error {
@@ -197,7 +193,8 @@ func runStdioTransport(ctx context.Context, server *mcp.Server, logger *zerolog.
 
 func setupLogger(cfg *config.LoggingConfig) zerolog.Logger {
 	// Determine log level
-	level := zerolog.WarnLevel
+	// Default to ErrorLevel to avoid cluttering MCP client logs
+	level := zerolog.ErrorLevel
 	if cfg.VeryVerbose {
 		level = zerolog.DebugLevel
 	} else if cfg.Verbose {
@@ -210,10 +207,12 @@ func setupLogger(cfg *config.LoggingConfig) zerolog.Logger {
 		output = os.Stdout
 	}
 
-	// Create logger with human-friendly console output
+	// Disable colors for MCP servers since logs are captured by clients
+	// and ANSI escape codes appear as raw text
 	logger := zerolog.New(zerolog.ConsoleWriter{
 		Out:        output,
 		TimeFormat: time.RFC3339,
+		NoColor:    true,
 	}).
 		Level(level).
 		With().

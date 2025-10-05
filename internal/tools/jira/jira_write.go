@@ -441,7 +441,7 @@ func jiraCreateIssueLinkHandler(ctx context.Context, args map[string]interface{}
 	var commentObj *jira.Comment
 	if c, ok := args["comment"].(string); ok && c != "" {
 		commentObj = &jira.Comment{
-			Body: c,
+			Body: jira.NewDescription(c),
 		}
 	}
 

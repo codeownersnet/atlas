@@ -397,3 +397,75 @@ func TestExtractTextFromADF(t *testing.T) {
 		})
 	}
 }
+
+func TestComment_UnmarshalJSON_Body(t *testing.T) {
+	tests := []struct {
+		name     string
+		json     string
+		wantBody string
+		wantADF  bool
+		wantErr  bool
+	}{
+		{
+			name: "plain text body",
+			json: `{
+				"id": "123",
+				"body": "This is a plain text comment"
+			}`,
+			wantBody: "This is a plain text comment",
+			wantADF:  false,
+			wantErr:  false,
+		},
+		{
+			name: "ADF body",
+			json: `{
+				"id": "456",
+				"body": {
+					"version": 1,
+					"type": "doc",
+					"content": [
+						{
+							"type": "paragraph",
+							"content": [
+								{
+									"type": "text",
+									"text": "This is an ADF comment"
+								}
+							]
+						}
+					]
+				}
+			}`,
+			wantBody: "This is an ADF comment",
+			wantADF:  true,
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var comment Comment
+			err := json.Unmarshal([]byte(tt.json), &comment)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("json.Unmarshal() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err != nil {
+				return
+			}
+
+			if comment.Body == nil {
+				t.Errorf("Comment.Body is nil")
+				return
+			}
+
+			if got := comment.Body.String(); got != tt.wantBody {
+				t.Errorf("Comment.Body.String() = %q, want %q", got, tt.wantBody)
+			}
+
+			if got := comment.Body.IsADF(); got != tt.wantADF {
+				t.Errorf("Comment.Body.IsADF() = %v, want %v", got, tt.wantADF)
+			}
+		})
+	}
+}

@@ -310,9 +310,11 @@ func TestJiraConfigValidate(t *testing.T) {
 
 func TestServerConfigValidate(t *testing.T) {
 	tests := []struct {
-		name    string
-		config  *ServerConfig
-		wantErr bool
+		name              string
+		config            *ServerConfig
+		wantErr           bool
+		wantTransport     string
+		checkTransport    bool
 	}{
 		{
 			name: "valid stdio",
@@ -321,52 +323,53 @@ func TestServerConfigValidate(t *testing.T) {
 				Port:      8000,
 				Host:      "0.0.0.0",
 			},
-			wantErr: false,
+			wantErr:        false,
+			wantTransport:  "stdio",
+			checkTransport: true,
 		},
 		{
-			name: "valid sse",
+			name: "empty transport defaults to stdio",
 			config: &ServerConfig{
-				Transport: "sse",
+				Transport: "",
 				Port:      8080,
 				Host:      "localhost",
 			},
-			wantErr: false,
+			wantErr:        false,
+			wantTransport:  "stdio",
+			checkTransport: true,
 		},
 		{
-			name: "valid streamable-http",
+			name: "sse transport defaults to stdio",
 			config: &ServerConfig{
-				Transport: "streamable-http",
+				Transport: "sse",
 				Port:      3000,
 				Host:      "127.0.0.1",
 			},
-			wantErr: false,
+			wantErr:        false,
+			wantTransport:  "stdio",
+			checkTransport: true,
 		},
 		{
-			name: "invalid transport",
+			name: "streamable-http transport defaults to stdio",
+			config: &ServerConfig{
+				Transport: "streamable-http",
+				Port:      8000,
+				Host:      "0.0.0.0",
+			},
+			wantErr:        false,
+			wantTransport:  "stdio",
+			checkTransport: true,
+		},
+		{
+			name: "invalid transport defaults to stdio",
 			config: &ServerConfig{
 				Transport: "invalid",
 				Port:      8000,
 				Host:      "0.0.0.0",
 			},
-			wantErr: true,
-		},
-		{
-			name: "invalid port - too low",
-			config: &ServerConfig{
-				Transport: "stdio",
-				Port:      0,
-				Host:      "0.0.0.0",
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid port - too high",
-			config: &ServerConfig{
-				Transport: "stdio",
-				Port:      65536,
-				Host:      "0.0.0.0",
-			},
-			wantErr: true,
+			wantErr:        false,
+			wantTransport:  "stdio",
+			checkTransport: true,
 		},
 	}
 
@@ -375,6 +378,9 @@ func TestServerConfigValidate(t *testing.T) {
 			err := tt.config.Validate()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ServerConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.checkTransport && tt.config.Transport != tt.wantTransport {
+				t.Errorf("ServerConfig.Validate() transport = %v, want %v", tt.config.Transport, tt.wantTransport)
 			}
 		})
 	}
@@ -483,7 +489,7 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "invalid server config",
+			name: "server config with non-stdio transport defaults to stdio",
 			config: &Config{
 				Jira: &JiraConfig{
 					URL:        "https://example.atlassian.net",
@@ -500,7 +506,7 @@ func TestConfigValidate(t *testing.T) {
 				Logging:  &LoggingConfig{},
 				Proxy:    &ProxyConfig{},
 			},
-			wantErr: true,
+			wantErr: false, // No longer returns error, defaults to stdio
 		},
 	}
 

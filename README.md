@@ -151,6 +151,12 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
+#### VS Code
+
+For VS Code integration, see the detailed setup guide and configuration samples:
+- **Setup Guide**: [docs/vscode/setup.md](docs/vscode/setup.md)
+- **Configuration Samples**: [docs/vscode/samples/](docs/vscode/samples/) directory
+
 #### Cursor
 
 Open Settings → MCP → Add new global MCP server and configure similarly.

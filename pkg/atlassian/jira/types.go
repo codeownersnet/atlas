@@ -172,6 +172,16 @@ func (d *Description) Raw() json.RawMessage {
 	return d.raw
 }
 
+// NewDescription creates a new Description from a plain text string
+func NewDescription(text string) *Description {
+	data, _ := json.Marshal(text)
+	return &Description{
+		raw:   data,
+		isADF: false,
+		text:  text,
+	}
+}
+
 // extractTextFromADF recursively extracts text content from an ADF object
 func extractTextFromADF(obj map[string]interface{}) string {
 	var text string
@@ -407,7 +417,7 @@ type Comment struct {
 	ID           string        `json:"id"`
 	Self         string        `json:"self,omitempty"`
 	Author       *User         `json:"author,omitempty"`
-	Body         string        `json:"body"`
+	Body         *Description  `json:"body"` // Can be plain text or ADF format
 	UpdateAuthor *User         `json:"updateAuthor,omitempty"`
 	Created      AtlassianTime `json:"created,omitempty"`
 	Updated      AtlassianTime `json:"updated,omitempty"`

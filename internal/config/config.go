@@ -71,9 +71,9 @@ type OpsgenieConfig struct {
 
 // ServerConfig holds server transport configuration
 type ServerConfig struct {
-	Transport string // stdio, sse, streamable-http
-	Port      int
-	Host      string
+	Transport string // stdio (only supported transport)
+	Port      int    // Reserved for future use
+	Host      string // Reserved for future use
 }
 
 // SecurityConfig holds security and access control settings
@@ -121,9 +121,18 @@ func (a AuthMethod) String() string {
 }
 
 // Load loads configuration from environment variables, .env file, and CLI flags
-func Load() (*Config, error) {
+func Load(configFile ...string) (*Config, error) {
 	// Load .env file if it exists (ignore errors if file doesn't exist)
-	_ = godotenv.Load()
+	// Use Overload to allow config file to override shell environment variables
+	if len(configFile) > 0 && configFile[0] != "" {
+		// Load specified config file and override existing env vars
+		if err := godotenv.Overload(configFile[0]); err != nil {
+			return nil, fmt.Errorf("failed to load config file %s: %w", configFile[0], err)
+		}
+	} else {
+		// Load default .env file and override existing env vars (ignore errors if file doesn't exist)
+		_ = godotenv.Overload()
+	}
 
 	// Initialize viper
 	viper.AutomaticEnv()
@@ -365,18 +374,14 @@ func (o *OpsgenieConfig) Validate() error {
 
 // Validate validates server configuration
 func (s *ServerConfig) Validate() error {
-	validTransports := map[string]bool{
-		"stdio":           true,
-		"sse":             true,
-		"streamable-http": true,
+	// Only stdio transport is supported
+	if s.Transport != "" && s.Transport != "stdio" {
+		// Don't fail validation, just default to stdio
+		s.Transport = "stdio"
 	}
 
-	if !validTransports[s.Transport] {
-		return fmt.Errorf("invalid transport '%s', must be one of: stdio, sse, streamable-http", s.Transport)
-	}
-
-	if s.Port < 1 || s.Port > 65535 {
-		return fmt.Errorf("invalid port %d, must be between 1 and 65535", s.Port)
+	if s.Transport == "" {
+		s.Transport = "stdio"
 	}
 
 	return nil
