@@ -4,11 +4,13 @@
 # Variables
 BINARY_NAME=atlas-mcp
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_DIR=bin
 MAIN_PATH=./cmd/atlas-mcp
 GOBASE=$(shell pwd)
 GOBIN=$(GOBASE)/$(BUILD_DIR)
-LDFLAGS=-ldflags "-X main.version=$(VERSION)"
+LDFLAGS=-ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
 # Go parameters
 GOCMD=go

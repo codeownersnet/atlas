@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	ProtocolVersion = "2024-11-05"
-	ServerName      = "go-mcp-atlassian"
+	ProtocolVersion = "2025-10-08"
+	ServerName      = "atlas-mcp"
 	ServerVersion   = "0.1.0"
 )
 

@@ -50,9 +50,34 @@ cd atlas
 go build -o atlas-mcp ./cmd/atlas-mcp
 ```
 
-### 2. Configuration
+### 2. Authentication
 
-Create a `.env` file:
+#### Option A: API Tokens (Cloud - Jira/Confluence)
+1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+2. Click "Create API token"
+3. Copy the token immediately
+4. Use in configuration below
+
+#### Option B: API Key (Opsgenie)
+1. Go to Opsgenie → Settings → API Key Management
+2. Create a new API key
+3. Copy the key immediately
+4. Use in configuration below
+
+#### Option C: Personal Access Token (Server/Data Center)
+1. Go to your profile → Personal Access Tokens
+2. Create a new token
+3. Copy the token immediately
+4. Use in configuration below
+
+#### Option D: Bearer Token (BYO OAuth - Advanced)
+If you manage OAuth tokens externally, you'll need your OAuth access token and cloud ID.
+
+**Note:** You are responsible for token refresh and management.
+
+### 3. Configuration
+
+Create a `.env` file with your credentials from step 2:
 
 ```bash
 # For Jira Cloud
@@ -88,36 +113,15 @@ OPSGENIE_API_KEY=your_opsgenie_api_key
 ```
 </details>
 
-### 3. Authentication
-
-#### Option A: API Tokens (Cloud - Jira/Confluence)
-1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
-2. Click "Create API token"
-3. Copy the token immediately
-4. Set in `.env` file
-
-#### Option B: API Key (Opsgenie)
-1. Go to Opsgenie → Settings → API Key Management
-2. Create a new API key
-3. Copy the key immediately
-4. Set in `.env` file
-
-#### Option C: Personal Access Token (Server/Data Center)
-1. Go to your profile → Personal Access Tokens
-2. Create a new token
-3. Copy the token immediately
-4. Set in `.env` file
-
-#### Option D: Bearer Token (BYO OAuth - Advanced)
-If you manage OAuth tokens externally:
+<details>
+<summary>Bearer Token (BYO OAuth) Configuration</summary>
 
 ```bash
 # Provide your own OAuth access token
 ATLASSIAN_OAUTH_ACCESS_TOKEN=your_oauth_access_token
 ATLASSIAN_OAUTH_CLOUD_ID=your_cloud_id
 ```
-
-**Note:** You are responsible for token refresh and management.
+</details>
 
 ### 4. Run the Server
 
