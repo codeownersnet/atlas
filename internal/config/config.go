@@ -123,15 +123,17 @@ func (a AuthMethod) String() string {
 // Load loads configuration from environment variables, .env file, and CLI flags
 func Load(configFile ...string) (*Config, error) {
 	// Load .env file if it exists (ignore errors if file doesn't exist)
-	// Use Overload to allow config file to override shell environment variables
+	// Use Load (not Overload) to respect environment variables set by the MCP host.
+	// This is important for MCP servers where credentials are passed via env vars.
 	if len(configFile) > 0 && configFile[0] != "" {
-		// Load specified config file and override existing env vars
-		if err := godotenv.Overload(configFile[0]); err != nil {
+		// Load specified config file, but don't override existing env vars
+		if err := godotenv.Load(configFile[0]); err != nil {
 			return nil, fmt.Errorf("failed to load config file %s: %w", configFile[0], err)
 		}
 	} else {
-		// Load default .env file and override existing env vars (ignore errors if file doesn't exist)
-		_ = godotenv.Overload()
+		// Load default .env file (ignore errors if file doesn't exist)
+		// This won't override existing env vars, allowing MCP host config to take precedence
+		_ = godotenv.Load()
 	}
 
 	// Initialize viper

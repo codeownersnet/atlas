@@ -11,11 +11,13 @@ type GetProjectsOptions struct {
 	Expand     []string // Resources to expand (e.g., "description", "lead", "issueTypes")
 	Recent     int      // Number of recent projects to return
 	Properties []string // Project properties to return
+	StartAt    int      // Starting index for pagination (Cloud only)
+	MaxResults int      // Maximum results per page (Cloud only)
 }
 
 // GetAllProjects retrieves all accessible projects
 func (c *Client) GetAllProjects(ctx context.Context, opts *GetProjectsOptions) ([]Project, error) {
-	path := fmt.Sprintf("%s/project", c.getAPIPath())
+	path := c.getProjectSearchAPIPath()
 
 	// Build query parameters
 	params := make(map[string]string)
@@ -29,10 +31,34 @@ func (c *Client) GetAllProjects(ctx context.Context, opts *GetProjectsOptions) (
 		if len(opts.Properties) > 0 {
 			params["properties"] = strings.Join(opts.Properties, ",")
 		}
+		// Add pagination support
+		if opts.StartAt > 0 {
+			params["startAt"] = fmt.Sprintf("%d", opts.StartAt)
+		}
+		if opts.MaxResults > 0 {
+			params["maxResults"] = fmt.Sprintf("%d", opts.MaxResults)
+		}
 	}
 
 	path = buildURL(path, params)
 
+	// Handle different response formats
+	if c.IsCloud() {
+		// Cloud v3 returns paginated response
+		var response struct {
+			Values     []Project `json:"values"`
+			MaxResults int       `json:"maxResults"`
+			StartAt    int       `json:"startAt"`
+			Total      int       `json:"total"`
+			IsLast     bool      `json:"isLast"`
+		}
+		if err := c.doRequest(ctx, "GET", path, nil, &response); err != nil {
+			return nil, fmt.Errorf("failed to get projects: %w", err)
+		}
+		return response.Values, nil
+	}
+
+	// Server v2 returns direct array
 	var projects []Project
 	if err := c.doRequest(ctx, "GET", path, nil, &projects); err != nil {
 		return nil, fmt.Errorf("failed to get projects: %w", err)
@@ -43,7 +69,7 @@ func (c *Client) GetAllProjects(ctx context.Context, opts *GetProjectsOptions) (
 
 // GetProject retrieves a project by key or ID
 func (c *Client) GetProject(ctx context.Context, projectKey string, expand []string) (*Project, error) {
-	path := fmt.Sprintf("%s/project/%s", c.getAPIPath(), projectKey)
+	path := fmt.Sprintf("%s/%s", c.getProjectAPIPath(), projectKey)
 
 	// Build query parameters
 	params := make(map[string]string)
@@ -63,7 +89,7 @@ func (c *Client) GetProject(ctx context.Context, projectKey string, expand []str
 
 // GetProjectVersions retrieves all versions for a project
 func (c *Client) GetProjectVersions(ctx context.Context, projectKey string) ([]Version, error) {
-	path := fmt.Sprintf("%s/project/%s/versions", c.getAPIPath(), projectKey)
+	path := fmt.Sprintf("%s/%s/versions", c.getProjectAPIPath(), projectKey)
 
 	var versions []Version
 	if err := c.doRequest(ctx, "GET", path, nil, &versions); err != nil {
@@ -75,7 +101,7 @@ func (c *Client) GetProjectVersions(ctx context.Context, projectKey string) ([]V
 
 // GetProjectComponents retrieves all components for a project
 func (c *Client) GetProjectComponents(ctx context.Context, projectKey string) ([]Component, error) {
-	path := fmt.Sprintf("%s/project/%s/components", c.getAPIPath(), projectKey)
+	path := fmt.Sprintf("%s/%s/components", c.getProjectAPIPath(), projectKey)
 
 	var components []Component
 	if err := c.doRequest(ctx, "GET", path, nil, &components); err != nil {
@@ -98,7 +124,7 @@ func (c *Client) GetProjectIssueTypes(ctx context.Context, projectKey string) ([
 
 // SearchProjects searches for projects using a query string
 func (c *Client) SearchProjects(ctx context.Context, query string, maxResults int) ([]Project, error) {
-	path := fmt.Sprintf("%s/project/search", c.getAPIPath())
+	path := c.getProjectSearchAPIPath()
 
 	params := make(map[string]string)
 	if query != "" {

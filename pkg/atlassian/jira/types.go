@@ -506,11 +506,12 @@ type Schema struct {
 
 // SearchResult represents the result of a JQL search
 type SearchResult struct {
-	Expand     string  `json:"expand,omitempty"`
-	StartAt    int     `json:"startAt"`
-	MaxResults int     `json:"maxResults"`
-	Total      int     `json:"total"`
-	Issues     []Issue `json:"issues"`
+	Expand        string  `json:"expand,omitempty"`
+	StartAt       int     `json:"startAt"`           // Server/DC only
+	MaxResults    int     `json:"maxResults"`
+	Total         int     `json:"total"`              // Server/DC only
+	Issues        []Issue `json:"issues"`
+	NextPageToken string  `json:"nextPageToken,omitempty"` // Cloud v3 only
 }
 
 // Board represents an agile board

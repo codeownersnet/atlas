@@ -100,22 +100,9 @@ func (r *ToolRegistry) CallTool(ctx context.Context, name string, arguments map[
 		return nil, fmt.Errorf("tool not found: %s", name)
 	}
 
-	// Execute the tool handler
-	result, err := handler(ctx, arguments)
-	if err != nil {
-		// Return error as a tool result with isError flag
-		return &CallToolResult{
-			Content: []Content{
-				{
-					Type: "text",
-					Text: fmt.Sprintf("Error executing tool: %v", err),
-				},
-			},
-			IsError: true,
-		}, nil
-	}
-
-	return result, nil
+	// Execute the tool handler and return result/error directly
+	// Errors should propagate to the server layer for proper JSON-RPC error responses
+	return handler(ctx, arguments)
 }
 
 // hasWriteTag checks if a tool has a "write" tag
