@@ -276,43 +276,106 @@ func TestSearchIssues(t *testing.T) {
 }
 
 func TestGetAllProjects(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/rest/api/2/project" {
-			t.Errorf("Expected path /rest/api/2/project, got %s", r.URL.Path)
-		}
-
-		projects := []Project{
-			{
-				ID:   "10000",
-				Key:  "TEST",
-				Name: "Test Project",
-			},
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(projects)
-	}))
-	defer server.Close()
-
-	client, err := NewClient(&Config{
-		BaseURL:   server.URL,
-		Auth:      &mockAuth{},
-		SSLVerify: true,
-	})
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+	tests := []struct {
+		name         string
+		baseURL      string
+		wantPath     string
+		responseType string // "array" for Server, "paginated" for Cloud
+	}{
+		{
+			name:         "Server deployment",
+			baseURL:      "http://jira.example.com",
+			wantPath:     "/rest/api/2/project",
+			responseType: "array",
+		},
+		{
+			name:         "Cloud deployment",
+			baseURL:      "https://example.atlassian.net",
+			wantPath:     "/rest/api/3/project/search",
+			responseType: "paginated",
+		},
 	}
 
-	projects, err := client.GetAllProjects(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("GetAllProjects() error = %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != tt.wantPath {
+					t.Errorf("Expected path %s, got %s", tt.wantPath, r.URL.Path)
+				}
 
-	if len(projects) != 1 {
-		t.Errorf("Expected 1 project, got %d", len(projects))
-	}
-	if projects[0].Key != "TEST" {
-		t.Errorf("Expected project key TEST, got %s", projects[0].Key)
+				w.Header().Set("Content-Type", "application/json")
+
+				if tt.responseType == "paginated" {
+					// Cloud v3 paginated response
+					response := struct {
+						Values     []Project `json:"values"`
+						MaxResults int       `json:"maxResults"`
+						StartAt    int       `json:"startAt"`
+						Total      int       `json:"total"`
+						IsLast     bool      `json:"isLast"`
+					}{
+						Values: []Project{
+							{
+								ID:   "10000",
+								Key:  "TEST",
+								Name: "Test Project",
+							},
+						},
+						MaxResults: 50,
+						StartAt:    0,
+						Total:      1,
+						IsLast:     true,
+					}
+					json.NewEncoder(w).Encode(response)
+				} else {
+					// Server v2 array response
+					projects := []Project{
+						{
+							ID:   "10000",
+							Key:  "TEST",
+							Name: "Test Project",
+						},
+					}
+					json.NewEncoder(w).Encode(projects)
+				}
+			}))
+			defer server.Close()
+
+			// Create client with the deployment-specific baseURL to detect type correctly
+			client, err := NewClient(&Config{
+				BaseURL:   tt.baseURL,
+				Auth:      &mockAuth{},
+				SSLVerify: true,
+			})
+			if err != nil {
+				t.Fatalf("Failed to create client: %v", err)
+			}
+
+			// Override the httpClient with one pointing to test server
+			// while preserving deployment type in the Jira client
+			testClient, err := NewClient(&Config{
+				BaseURL:   server.URL,
+				Auth:      &mockAuth{},
+				SSLVerify: true,
+			})
+			if err != nil {
+				t.Fatalf("Failed to create test client: %v", err)
+			}
+			client.httpClient = testClient.httpClient
+			client.baseURL = server.URL
+
+			projects, err := client.GetAllProjects(context.Background(), nil)
+			if err != nil {
+				t.Fatalf("GetAllProjects() error = %v", err)
+			}
+
+			if len(projects) != 1 {
+				t.Errorf("Expected 1 project, got %d", len(projects))
+			}
+			if projects[0].Key != "TEST" {
+				t.Errorf("Expected project key TEST, got %s", projects[0].Key)
+			}
+		})
 	}
 }
 

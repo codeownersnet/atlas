@@ -106,8 +106,20 @@ func jiraSearchHandler(ctx context.Context, args map[string]interface{}) (*mcp.C
 	if fields, ok := args["fields"].(string); ok && fields != "" {
 		if fields == "*all" {
 			opts.Fields = []string{"*all"}
-		} else if fields != "essential" {
+		} else if fields == "essential" {
+			// Essential fields for search results
+			opts.Fields = []string{
+				"summary", "status", "assignee", "reporter", "priority",
+				"issuetype", "project", "created", "updated", "key",
+			}
+		} else {
 			opts.Fields = strings.Split(fields, ",")
+		}
+	} else {
+		// Default to essential fields if not specified
+		opts.Fields = []string{
+			"summary", "status", "assignee", "reporter", "priority",
+			"issuetype", "project", "created", "updated", "key",
 		}
 	}
 

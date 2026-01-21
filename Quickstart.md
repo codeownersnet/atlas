@@ -31,6 +31,18 @@ claude mcp add --transport stdio atlas \
   -- atlas-mcp
 ```
 
+> **Tip:** Add `--scope user` to install globally (available in all projects):
+>
+> ```bash
+> claude mcp add --scope user --transport stdio atlas \
+>   --env JIRA_URL=https://your-domain.atlassian.net \
+>   --env JIRA_USERNAME=your-email@example.com \
+>   --env JIRA_API_TOKEN=your-api-token-here \
+>   -- atlas-mcp
+> ```
+>
+> Without `--scope`, the server is only available in the current project.
+
 Replace the values with your actual Jira URL, email, and API token.
 
 ### Option B: Manual Configuration

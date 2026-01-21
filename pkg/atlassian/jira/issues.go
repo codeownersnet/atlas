@@ -47,16 +47,17 @@ func (c *Client) GetIssue(ctx context.Context, issueKey string, opts *GetIssueOp
 type SearchOptions struct {
 	Fields        []string // Specific fields to retrieve
 	Expand        []string // Resources to expand
-	StartAt       int      // Index of the first issue to return (0-based)
+	StartAt       int      // Index of the first issue to return (0-based) - Server/DC only
 	MaxResults    int      // Maximum number of issues to return (default 50, max 100 for Cloud, 1000 for Server)
+	NextPageToken string   // Token for next page - Cloud v3 only
 	ValidateQuery bool     // Whether to validate the JQL query
 }
 
 // SearchIssues searches for issues using JQL
 func (c *Client) SearchIssues(ctx context.Context, jql string, opts *SearchOptions) (*SearchResult, error) {
 	// Use the deployment-specific search endpoint
-	// Cloud: /rest/api/3/search/jql (v2 deprecated and removed)
-	// Server/DC: /rest/api/2/search
+	// Cloud: /rest/api/3/search/jql (POST with JQL in body)
+	// Server/DC: /rest/api/2/search (POST with JQL in body)
 	path := c.getSearchAPIPath()
 
 	// Build request body
@@ -66,14 +67,42 @@ func (c *Client) SearchIssues(ctx context.Context, jql string, opts *SearchOptio
 
 	if opts != nil {
 		if len(opts.Fields) > 0 {
-			body["fields"] = opts.Fields
+			// Handle "*all" differently for Cloud vs Server
+			// Server v2: use "*all"
+			// Cloud v3: must explicitly list fields (doesn't support "*all" or "*navigable")
+			if len(opts.Fields) == 1 && opts.Fields[0] == "*all" {
+				if c.IsCloud() {
+					// For Cloud v3 API, explicitly list all standard fields
+					// Custom fields (customfield_*) will also be returned
+					body["fields"] = []string{
+						"*all", // Try *all since we fixed the startAt issue
+					}
+				} else{
+					// For Server, use "*all"
+					body["fields"] = opts.Fields
+				}
+			} else {
+				// For specific fields, add them normally
+				body["fields"] = opts.Fields
+			}
 		}
 		if len(opts.Expand) > 0 {
 			body["expand"] = opts.Expand
 		}
-		if opts.StartAt > 0 {
+
+		// Handle pagination differently for Cloud vs Server
+		// Cloud v3 uses token-based pagination (nextPageToken)
+		// Server/DC uses offset-based pagination (startAt)
+		if c.IsCloud() {
+			// Cloud: use nextPageToken if provided (omit for first page)
+			if opts.NextPageToken != "" {
+				body["nextPageToken"] = opts.NextPageToken
+			}
+		} else {
+			// Server: use startAt (always include it)
 			body["startAt"] = opts.StartAt
 		}
+
 		if opts.MaxResults > 0 {
 			body["maxResults"] = opts.MaxResults
 		} else {
@@ -83,6 +112,10 @@ func (c *Client) SearchIssues(ctx context.Context, jql string, opts *SearchOptio
 			body["validateQuery"] = true
 		}
 	} else {
+		// No options provided - use defaults
+		if !c.IsCloud() {
+			body["startAt"] = 0 // Default for Server
+		}
 		body["maxResults"] = 50 // Default
 	}
 

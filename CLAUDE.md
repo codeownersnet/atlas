@@ -360,11 +360,10 @@ func TestCreateNewResource(t *testing.T) {
 - Tool filtering
 
 🚧 **In Progress / Planned:**
-- HTTP transports (SSE, streamable-http)
-- Multi-user support
 - Content conversion (Markdown ↔ Confluence Storage)
 - Docker images
 - Homebrew formula
+- Improved test coverage
 
 ## Useful Resources
 

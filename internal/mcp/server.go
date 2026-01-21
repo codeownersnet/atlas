@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	ProtocolVersion = "2025-10-08"
+	ProtocolVersion = "2024-11-05"
 	ServerName      = "atlas-mcp"
 	ServerVersion   = "0.1.0"
 )

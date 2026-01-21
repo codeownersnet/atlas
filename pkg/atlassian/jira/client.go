@@ -190,13 +190,33 @@ func (c *Client) getAPIPath() string {
 }
 
 // getSearchAPIPath returns the appropriate API path for search operations
-// Cloud uses /rest/api/3/search/jql (v2 was deprecated and removed)
-// Server/DC uses /rest/api/2/search
+// Cloud uses /rest/api/3/search/jql (POST with JQL in body)
+// Server/DC uses /rest/api/2/search (POST with JQL in body)
 func (c *Client) getSearchAPIPath() string {
 	if c.IsCloud() {
 		return apiVersion3 + "/search/jql"
 	}
 	return apiVersion2 + "/search"
+}
+
+// getProjectSearchAPIPath returns the appropriate API path for project operations
+// Cloud uses /rest/api/3/project/search (paginated search)
+// Server/DC uses /rest/api/2/project (direct list)
+func (c *Client) getProjectSearchAPIPath() string {
+	if c.IsCloud() {
+		return apiVersion3 + "/project/search"
+	}
+	return apiVersion2 + "/project"
+}
+
+// getProjectAPIPath returns the appropriate API path for single project operations
+// Cloud uses /rest/api/3/project
+// Server/DC uses /rest/api/2/project
+func (c *Client) getProjectAPIPath() string {
+	if c.IsCloud() {
+		return apiVersion3 + "/project"
+	}
+	return apiVersion2 + "/project"
 }
 
 // getAgileAPIPath returns the agile API path
