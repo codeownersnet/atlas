@@ -23,7 +23,7 @@ func JiraCreateIssueTool() *mcp.ToolDefinition {
 				"project_key": mcp.NewStringProperty("Project key (e.g., 'PROJ')"),
 				"issue_type":  mcp.NewStringProperty("Issue type name (e.g., 'Bug', 'Story', 'Task')"),
 				"summary":     mcp.NewStringProperty("Issue summary/title"),
-				"description": mcp.NewStringProperty("Issue description"),
+				"description": mcp.NewStringProperty("Issue description. Supports rich Markdown formatting: ## headings, **bold**, *italic*, `code`, ~~strikethrough~~, ++underline++, links [text](url), lists, tables, code blocks (```lang```). Blockquotes (> text), panels ([info], [warning], [error], [success]), expand sections (<details>Title</details>), mentions (@username), status ([status:Done]), and emoji (:smile:) are also supported. Jira wiki markup (h2., *bold*, {code}, etc.) is auto-converted."),
 				"fields":      mcp.NewStringProperty("Additional fields as JSON object (e.g., '{\"priority\": {\"name\": \"High\"}, \"labels\": [\"bug\"]}'). Use for custom fields and standard fields."),
 			},
 			"project_key", "issue_type", "summary",
@@ -99,7 +99,7 @@ func jiraCreateIssueHandler(ctx context.Context, args map[string]interface{}) (*
 func JiraUpdateIssueTool() *mcp.ToolDefinition {
 	return mcp.NewTool(
 		"jira_update_issue",
-		"Update an existing Jira issue. Can update any field including custom fields.",
+		"Update an existing Jira issue. Can update any field including custom fields. Description field supports rich Markdown formatting: ## headings, **bold**, *italic*, `code`, ~~strikethrough~~, ++underline++, links, lists, tables, code blocks. Blockquotes (> text), panels ([info], [warning], [error], [success]), expand sections (<details>Title</details>), mentions (@username), status ([status:Done]), and emoji (:smile:) are also supported.",
 		mcp.NewInputSchema(
 			map[string]mcp.Property{
 				"issue_key": mcp.NewStringProperty("Issue key (e.g., 'PROJ-123')"),
@@ -198,7 +198,7 @@ func jiraDeleteIssueHandler(ctx context.Context, args map[string]interface{}) (*
 func JiraAddCommentTool() *mcp.ToolDefinition {
 	return mcp.NewTool(
 		"jira_add_comment",
-		"Add a comment to a Jira issue. Supports Markdown-style formatting.",
+		"Add a comment to a Jira issue. Supports rich Markdown formatting: ## headings, **bold**, *italic*, `code`, ~~strikethrough~~, ++underline++, links [text](url), lists, tables, code blocks. Blockquotes (> text), panels ([info], [warning], [error], [success]), expand sections (<details>Title</details>), mentions (@username), status ([status:Done]), and emoji (:smile:) are also supported. Jira wiki markup is auto-converted.",
 		mcp.NewInputSchema(
 			map[string]mcp.Property{
 				"issue_key": mcp.NewStringProperty("Issue key (e.g., 'PROJ-123')"),

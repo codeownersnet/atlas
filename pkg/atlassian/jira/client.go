@@ -184,8 +184,12 @@ func buildURL(base string, params map[string]string) string {
 }
 
 // getAPIPath returns the appropriate API path based on deployment type
+// Cloud uses API v3 which requires ADF format for rich text fields
+// Server/DC uses API v2 which accepts plain text
 func (c *Client) getAPIPath() string {
-	// Both Cloud and Server/DC use API v2 for most operations
+	if c.IsCloud() {
+		return apiVersion3
+	}
 	return apiVersion2
 }
 
@@ -222,4 +226,45 @@ func (c *Client) getProjectAPIPath() string {
 // getAgileAPIPath returns the agile API path
 func (c *Client) getAgileAPIPath() string {
 	return agileVersion
+}
+
+// convertDescriptionToADF converts string descriptions to ADF format in a fields map.
+// This is used for Cloud API v3 which requires ADF format for rich text fields.
+// If the description is already a map (ADF), it's left unchanged.
+// If there's no description field, the map is returned unchanged.
+func (c *Client) convertDescriptionToADF(fields map[string]interface{}) map[string]interface{} {
+	if fields == nil {
+		return fields
+	}
+
+	desc, exists := fields["description"]
+	if !exists {
+		return fields
+	}
+
+	// If already a map (ADF format), leave it as-is
+	if _, isMap := desc.(map[string]interface{}); isMap {
+		return fields
+	}
+
+	// Convert string description to ADF
+	if descStr, ok := desc.(string); ok {
+		adfDesc := NewADFDescription(descStr)
+		// Create a copy of the fields map to avoid modifying the original
+		result := make(map[string]interface{}, len(fields))
+		for k, v := range fields {
+			result[k] = v
+		}
+		// Use Raw() directly to preserve UTF-8 encoding
+		var adfMap map[string]interface{}
+		if err := json.Unmarshal(adfDesc.Raw(), &adfMap); err == nil {
+			result["description"] = adfMap
+		} else {
+			// Fallback: use the raw JSON bytes directly
+			result["description"] = adfDesc.Raw()
+		}
+		return result
+	}
+
+	return fields
 }

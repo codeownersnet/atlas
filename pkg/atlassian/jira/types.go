@@ -182,6 +182,38 @@ func NewDescription(text string) *Description {
 	}
 }
 
+// NewADFDescription creates a new Description from markdown text, converting it to ADF format.
+// This is used when creating/updating issues on Jira Cloud which requires ADF format.
+func NewADFDescription(markdown string) *Description {
+	adf := MarkdownToADF(markdown)
+	data, _ := json.Marshal(adf)
+	return &Description{
+		raw:   data,
+		isADF: true,
+		text:  markdown,
+	}
+}
+
+// ToMarkdown returns the description content as markdown.
+// If the description is in ADF format, it converts it to markdown preserving formatting.
+// If already plain text, returns the text as-is.
+func (d *Description) ToMarkdown() string {
+	if d == nil {
+		return ""
+	}
+	if !d.isADF {
+		return d.text
+	}
+
+	// Parse the raw ADF and convert to markdown
+	var adf map[string]interface{}
+	if err := json.Unmarshal(d.raw, &adf); err != nil {
+		return d.text // Fall back to extracted text on error
+	}
+
+	return ADFToMarkdown(adf)
+}
+
 // extractTextFromADF recursively extracts text content from an ADF object
 func extractTextFromADF(obj map[string]interface{}) string {
 	var text string
