@@ -279,8 +279,9 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	}
 
 	// Set default headers
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Charset", "utf-8")
 
 	// Apply custom headers
 	for key, value := range c.customHeaders {

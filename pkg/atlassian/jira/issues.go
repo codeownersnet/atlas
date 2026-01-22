@@ -133,8 +133,15 @@ func (c *Client) SearchIssues(ctx context.Context, jql string, opts *SearchOptio
 }
 
 // CreateIssue creates a new issue
+// For Cloud (API v3), string descriptions are automatically converted to ADF format.
+// For Server/DC (API v2), descriptions are sent as plain text.
 func (c *Client) CreateIssue(ctx context.Context, fields map[string]interface{}) (*Issue, error) {
 	path := fmt.Sprintf("%s/issue", c.getAPIPath())
+
+	// Convert description to ADF for Cloud
+	if c.IsCloud() {
+		fields = c.convertDescriptionToADF(fields)
+	}
 
 	reqBody, err := json.Marshal(CreateIssueRequest{Fields: fields})
 	if err != nil {
@@ -168,11 +175,17 @@ type BatchError struct {
 }
 
 // BatchCreateIssues creates multiple issues in a single request
+// For Cloud (API v3), string descriptions are automatically converted to ADF format.
+// For Server/DC (API v2), descriptions are sent as plain text.
 func (c *Client) BatchCreateIssues(ctx context.Context, issuesFields []map[string]interface{}) (*BatchCreateIssuesResponse, error) {
 	path := fmt.Sprintf("%s/issue/bulk", c.getAPIPath())
 
 	issueUpdates := make([]CreateIssueRequest, len(issuesFields))
 	for i, fields := range issuesFields {
+		// Convert description to ADF for Cloud
+		if c.IsCloud() {
+			fields = c.convertDescriptionToADF(fields)
+		}
 		issueUpdates[i] = CreateIssueRequest{Fields: fields}
 	}
 
@@ -190,8 +203,15 @@ func (c *Client) BatchCreateIssues(ctx context.Context, issuesFields []map[strin
 }
 
 // UpdateIssue updates an issue
+// For Cloud (API v3), string descriptions are automatically converted to ADF format.
+// For Server/DC (API v2), descriptions are sent as plain text.
 func (c *Client) UpdateIssue(ctx context.Context, issueKey string, fields map[string]interface{}, update map[string]interface{}) error {
 	path := fmt.Sprintf("%s/issue/%s", c.getAPIPath(), issueKey)
+
+	// Convert description to ADF for Cloud
+	if c.IsCloud() {
+		fields = c.convertDescriptionToADF(fields)
+	}
 
 	reqBody, err := json.Marshal(UpdateIssueRequest{
 		Fields: fields,
