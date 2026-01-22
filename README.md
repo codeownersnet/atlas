@@ -1,9 +1,37 @@
 # Go MCP Atlassian
 
-A high-performance Go implementation of the Model Context Protocol (MCP) server for Atlassian products (Jira, Confluence, and Opsgenie). This server enables AI assistants like Claude to seamlessly interact with your Atlassian instances.
+A high-performance Go implementation of the Model Context Protocol (MCP) server for Atlassian products (Jira, Confluence, and Opsgenie). This server enables AI assistants like Claude to seamlessly interact with your Atlassian instances through secure, controlled access.
 
 [![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+## Why Use This MCP?
+
+### Control Your AI's Access
+
+This MCP server gives you granular control over what your AI assistant can access and modify in your Atlassian environment:
+
+- **Lock down to specific projects** - Restrict Jira access to only the projects you approve
+- **Limit to specific spaces** - Confine Confluence access to designated spaces
+- **Enable only the tools you need** - whitelist specific MCP tools for precise control
+- **Disable entire services** - Turn off Jira, Confluence, or Opsgenie independently
+
+### Save Context Token Budget
+
+Instead of sending your entire workflow or documentation to the AI, let it retrieve the relevant information on-demand:
+
+- Query Jira for specific issues without copying/pasting
+- Search Confluence for documents and retrieve only what's needed
+- Access real-time data from your Atlassian instances
+
+### Built-in Guardrails
+
+Security features to keep your data safe:
+
+- **Read-only mode** - Run in a mode that prohibits any write operations
+- **Tool filtering** - Only expose the tools you explicitly enable
+- **Project/space filtering** - AI can only access resources you've approved
+- **Service-level controls** - Disable entire Atlassian products selectively
 
 ## Features
 
@@ -12,7 +40,7 @@ A high-performance Go implementation of the Model Context Protocol (MCP) server 
 - **Multiple Auth Methods**: API Token, Personal Access Token, Bearer Token (BYO OAuth)
 - **Production Ready**: Built-in retry logic, proxy support, SSL verification
 - **Flexible Configuration**: Environment variables, .env files, CLI flags
-- **Security**: Read-only mode, tool filtering, credential masking
+- **Security**: Read-only mode, tool filtering, project/space filtering, credential masking
 - **High Performance**: Native Go implementation with efficient HTTP client
 
 ## Supported Platforms
@@ -165,25 +193,101 @@ For VS Code integration, see the detailed setup guide and configuration samples:
 
 Open Settings → MCP → Add new global MCP server and configure similarly.
 
+## Security & Guardrails
+
+This MCP server provides multiple layers of security control to keep your Atlassian data safe:
+
+### Read-Only Mode
+
+Disable all write operations to prevent accidental modifications:
+
+```bash
+READ_ONLY_MODE=true
+```
+
+When enabled, all write tools (create, update, delete, etc.) will be unavailable to the AI.
+
+### Tool Filtering
+
+Restrict access to specific tools only:
+
+```bash
+ENABLED_TOOLS=jira_get_issue,jira_search,confluence_search,opsgenie_list_alerts
+```
+
+This is a comma-separated whitelist of tool names. Only the tools listed will be available.
+
+### Project & Space Filtering
+
+Limit access to specific Jira projects or Confluence spaces:
+
+```bash
+# Only allow access to these Jira projects
+JIRA_PROJECTS_FILTER=PROJ1,PROJ2
+
+# Only allow access to these Confluence spaces
+CONFLUENCE_SPACES_FILTER=SPACE1,SPACE2
+```
+
+### Service-Level Controls
+
+Disable entire services if you don't need them:
+
+```bash
+# Disable Opsgenie completely
+OPSGENIE_ENABLED=false
+
+# Disable Jira
+JIRA_ENABLED=false
+
+# Disable Confluence
+CONFLUENCE_ENABLED=false
+```
+
+### Guardrails Combinations
+
+You can combine multiple guardrails for maximum security:
+
+```bash
+# Read-only access to specific Confluence space only
+READ_ONLY_MODE=true
+JIRA_ENABLED=false
+OPSGENIE_ENABLED=false
+CONFLUENCE_SPACES_FILTER=DOC
+```
+
+```bash
+# Full access to one Jira project, no Opsgenie
+JIRA_PROJECTS_FILTER=PROD
+OPSGENIE_ENABLED=false
+```
+
 ## Available Tools
 
 ### Jira Tools (29 total)
 
 #### Read Operations (14 tools)
 - `jira_get_issue` - Get issue details with field filtering
-- `jira_search` - Search issues using JQL
+- `jira_search` - Search issues using JQL queries
 - `jira_search_fields` - Search for field names (including custom fields)
 - `jira_get_all_projects` - List all accessible projects
-- `jira_get_project_issues` - Get all issues in a project
+- `jira_get_project_issues` - Get all issues in a specific project
 - `jira_get_project_versions` - Get fix versions for a project
-- `jira_get_transitions` - Get available status transitions
-- `jira_get_worklog` - Get worklog entries
+- `jira_get_transitions` - Get available status transitions for an issue
+- `jira_get_worklog` - Get worklog entries for time tracking
 - `jira_get_agile_boards` - Get agile boards (Scrum/Kanban)
-- `jira_get_board_issues` - Get issues on a board
+- `jira_get_board_issues` - Get issues on a specific board
 - `jira_get_sprints_from_board` - Get sprints from a board
 - `jira_get_sprint_issues` - Get issues in a sprint
 - `jira_get_issue_link_types` - Get available link types
 - `jira_get_user_profile` - Get user information
+
+**When to use Jira:** Use Jira tools when you need to track work, manage projects, or query issue status.
+
+**Example scenarios:**
+- "Show me all high-priority bugs assigned to me"
+- "What's the status of the PROJ-123 issue?"
+- "Create a summary of all issues in the current sprint"
 
 #### Write Operations (15 tools)
 - `jira_create_issue` - Create new issues
@@ -205,12 +309,19 @@ Open Settings → MCP → Add new global MCP server and configure similarly.
 ### Confluence Tools (11 total)
 
 #### Read Operations (6 tools)
-- `confluence_search` - Search content using CQL or text
+- `confluence_search` - Search content using CQL or plain text
 - `confluence_get_page` - Get page content by ID or title+space
 - `confluence_get_page_children` - Get child pages
 - `confluence_get_comments` - Get page comments
 - `confluence_get_labels` - Get page labels
 - `confluence_search_user` - Search for users
+
+**When to use Confluence:** Use Confluence tools for documentation, knowledge base queries, and wiki content.
+
+**Example scenarios:**
+- "Find our API documentation in Confluence"
+- "What are the child pages under our product requirements space?"
+- "Summarize the recent changes to our engineering guidelines"
 
 #### Write Operations (5 tools)
 - `confluence_create_page` - Create new pages
@@ -235,6 +346,13 @@ Open Settings → MCP → Add new global MCP server and configure similarly.
 - `opsgenie_get_team` - Get team details
 - `opsgenie_list_teams` - List all teams
 - `opsgenie_get_user` - Get user information
+
+**When to use Opsgenie:** Use Opsgenie tools for incident management, alert monitoring, and on-call information.
+
+**Example scenarios:**
+- "Show me all critical alerts from the last hour"
+- "Who is currently on-call for the infrastructure team?"
+- "Get the list of incidents from this week"
 
 #### Write Operations (12 tools)
 - `opsgenie_create_alert` - Create new alerts
@@ -337,174 +455,43 @@ User: "Show me all critical alerts in Opsgenie and create an incident"
 AI: [Lists critical alerts and creates incident with proper responders]
 ```
 
-## Development
-
-### Prerequisites
-- Go 1.25 or higher
-- Access to Jira, Confluence, and/or Opsgenie instance
-- API tokens or Personal Access Tokens
-
-### Using Make
-
-The project includes a comprehensive Makefile for common development tasks:
-
-```bash
-# See all available commands
-make help
-
-# Build the binary
-make build
-
-# Run tests
-make test
-
-# Run tests with coverage report
-make test-coverage
-
-# Run linter (requires golangci-lint)
-make lint
-
-# Format code
-make fmt
-
-# Run all quality checks
-make check
-
-# Clean build artifacts
-make clean
-
-# Install to $GOPATH/bin
-make install
-
-# Build for all platforms
-make build-all
-
-# Run in development mode with verbose logging
-make dev
-
-# Show project info and statistics
-make info
+### Project Status Reporting
+```
+User: "Generate a weekly status report for the PROJ project"
+AI: [Queries sprints, issues, and generates formatted report]
 ```
 
-### Manual Build Commands
-
-If you prefer not to use Make:
-
-```bash
-# Build binary
-go build -o atlas-mcp ./cmd/atlas-mcp
-
-# Run tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run linter (requires golangci-lint)
-golangci-lint run
-
-# Install development tools
-make tools
+### Knowledge Base Queries
+```
+User: "What do we know about troubleshooting the API service?"
+AI: [Searches Confluence knowledge base for relevant documentation]
 ```
 
-### Project Structure
-
+### On-Call Coordination
 ```
-atlas/
-├── cmd/atlas-mcp/           # Main application entry point
-├── internal/
-│   ├── auth/                # Authentication providers
-│   ├── client/              # HTTP client with retry logic
-│   ├── config/              # Configuration management
-│   ├── mcp/                 # MCP protocol implementation
-│   └── tools/               # Tool implementations
-│       ├── jira/            # Jira tools
-│       ├── confluence/      # Confluence tools
-│       └── opsgenie/        # Opsgenie tools
-├── pkg/atlassian/           # Atlassian API clients
-│   ├── jira/                # Jira API client
-│   ├── confluence/          # Confluence API client
-│   └── opsgenie/            # Opsgenie API client
-└── docs/                    # Documentation
+User: "Who's on-call tonight for the backend team?"
+AI: [Queries Opsgenie schedule and returns on-call engineer]
 ```
-
-## Troubleshooting
-
-### Authentication Failures
-
-**Cloud:**
-- Verify you're using an API token, not your password
-- Check the token hasn't expired
-- Ensure your email address is correct
-
-**Server/Data Center:**
-- Verify your Personal Access Token is valid
-- Check token hasn't expired
-- Ensure you have necessary permissions
-
-### SSL Certificate Errors
-
-For self-signed certificates on Server/Data Center:
-```bash
-JIRA_SSL_VERIFY=false
-CONFLUENCE_SSL_VERIFY=false
-```
-
-### Connection Issues
-
-Check proxy settings if behind corporate firewall:
-```bash
-HTTP_PROXY=http://proxy:8080
-HTTPS_PROXY=http://proxy:8080
-```
-
-### Tool Not Available
-
-If a tool isn't showing up:
-1. Check service is configured (Jira, Confluence, or Opsgenie)
-2. Verify service is enabled (e.g., `OPSGENIE_ENABLED=true`)
-3. Verify `ENABLED_TOOLS` isn't filtering it out
-4. Check if `READ_ONLY_MODE` is blocking write tools
-
-## Security
-
-- Never commit API tokens or credentials to version control
-- Use `.env` files for local development (already in `.gitignore`)
-- Enable `READ_ONLY_MODE` for untrusted environments
-- Use tool filtering to limit exposed functionality
-- Keep dependencies up to date
-
-## Roadmap
-
-- [x] Homebrew formula (automated with GoReleaser)
-- [ ] HTTP transports (SSE, streamable-http)
-- [ ] Multi-user support (per-request auth)
-- [ ] Content conversion (Markdown ↔ Confluence Storage format)
-- [ ] Attachment handling improvements
-- [ ] Metrics and observability
-- [ ] Docker images
 
 ## Contributing
 
-Contributions are welcome! Please:
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on:
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes with tests
-4. Submit a pull request
+- Setting up a development environment
+- Building and testing the project
+- Adding new tools and API methods
+- Code style guidelines
+- Pull request process
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
-
-This project is inspired by the Python [mcp-atlassian](https://github.com/sooperset/mcp-atlassian) implementation. While this is a complete rewrite in Go, we acknowledge the original project's design and feature set.
-
 ## Support
 
 - 📖 [Product Specification](docs/product.md)
 - 📋 [Implementation Plan](docs/implementation-plan.md)
+- 🤝 [Contributing Guide](CONTRIBUTING.md)
 - 🐛 [Report Issues](https://github.com/codeownersnet/atlas/issues)
 - 💬 [Discussions](https://github.com/codeownersnet/atlas/discussions)
 
